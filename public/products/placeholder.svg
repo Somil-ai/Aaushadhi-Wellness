@@ -1,0 +1,18 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" rx="20" fill="#EDE3CA"/>
+  <!-- Leaf shape -->
+  <path d="M200 80C200 80 120 140 110 220C100 300 160 340 200 340C240 340 300 300 290 220C280 140 200 80 200 80Z" fill="#7A8C3A" opacity="0.15"/>
+  <path d="M200 80C200 80 120 140 110 220C100 300 160 340 200 340C240 340 300 300 290 220C280 140 200 80 200 80Z" stroke="#5C6B2E" stroke-width="2" opacity="0.3"/>
+  <!-- Center vein -->
+  <path d="M200 100C200 100 200 180 200 320" stroke="#5C6B2E" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+  <!-- Side veins -->
+  <path d="M200 160C200 160 160 190 130 230" stroke="#5C6B2E" stroke-width="1" stroke-linecap="round" opacity="0.2"/>
+  <path d="M200 160C200 160 240 190 270 230" stroke="#5C6B2E" stroke-width="1" stroke-linecap="round" opacity="0.2"/>
+  <path d="M200 210C200 210 170 230 145 260" stroke="#5C6B2E" stroke-width="1" stroke-linecap="round" opacity="0.2"/>
+  <path d="M200 210C200 210 230 230 255 260" stroke="#5C6B2E" stroke-width="1" stroke-linecap="round" opacity="0.2"/>
+  <!-- Small mortar & pestle icon -->
+  <circle cx="200" cy="230" r="35" fill="#5C6B2E" opacity="0.08"/>
+  <path d="M180 240C180 240 190 215 200 215C210 215 220 240 220 240" stroke="#5C6B2E" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <path d="M175 240 L225 240" stroke="#5C6B2E" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <ellipse cx="200" cy="248" rx="28" ry="8" stroke="#5C6B2E" stroke-width="1.5" opacity="0.25"/>
+</svg>

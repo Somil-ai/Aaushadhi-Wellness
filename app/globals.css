@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/* ── Aaushadhi color tokens ── */
+:root {
+  --cream: #F5EFE0;
+  --parchment: #EDE3CA;
+  --olive: #5C6B2E;
+  --olive-light: #7A8C3A;
+  --earth: #8B5E3C;
+  --text-dark: #2E2B1F;
+  --text-muted: #7A7060;
+  --glass: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Tailwind v4 theme extension ── */
+@theme inline {
+  --color-cream: var(--cream);
+  --color-parchment: var(--parchment);
+  --color-olive: var(--olive);
+  --color-olive-light: var(--olive-light);
+  --color-earth: var(--earth);
+  --color-text-dark: var(--text-dark);
+  --color-text-muted: var(--text-muted);
+
+  --font-inter: var(--font-inter);
+  --font-playfair: var(--font-playfair);
+}
+
+/* ── Base styles ── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--cream);
+  color: var(--text-dark);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes carousel-slide {
+  from {
+    transform: translateX(24px);
+    opacity: 0.85;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-carousel-slide {
+  animation: carousel-slide 350ms ease-out;
+}
+
+/* ── Checkout animations ── */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-fade-slide-up {
+  animation: fadeSlideUp 300ms ease-out;
+}
+
+.animate-fade-slide-up-delay {
+  animation: fadeSlideUp 400ms ease-out 100ms both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 500ms ease-out;
+}
+
