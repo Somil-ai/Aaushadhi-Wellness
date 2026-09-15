@@ -149,11 +149,6 @@ export async function createRefund(
     body.amount = Math.round(amountInRupees * 100);
   }
 
-  // TEMP DEBUG — remove once refund issue is resolved
-  console.log("[razorpay refund debug] paymentId:", paymentId);
-  console.log("[razorpay refund debug] body:", JSON.stringify(body));
-  console.log("[razorpay refund debug] keyId set:", !!RAZORPAY_KEY_ID, "keySecret set:", !!RAZORPAY_KEY_SECRET);
-
   const res = await fetch(`${RAZORPAY_BASE_URL}/payments/${paymentId}/refund`, {
     method: "POST",
     headers: {
