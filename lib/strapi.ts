@@ -1,4 +1,4 @@
-import type { StrapiProduct, StrapiCategory } from "./types";
+import type { StrapiProduct, StrapiCategory, StrapiReview, ReviewStats } from "./types";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
@@ -141,4 +141,100 @@ export function getStrapiImageUrl(
   const baseUrl = STRAPI_URL.endsWith("/") ? STRAPI_URL.slice(0, -1) : STRAPI_URL;
   const imagePath = image.url.startsWith("/") ? image.url : `/${image.url}`;
   return `${baseUrl}${imagePath}`;
+}
+
+// ─── Reviews ────────────────────────────────────────────────
+
+/**
+ * Fetch approved reviews for a product, newest first.
+ * Pending/rejected reviews are never returned here — this is the only
+ * read path the product page uses, so moderation is enforced by construction
+ * rather than relying on a query param a client could tamper with.
+ */
+export async function getProductReviews(
+  productId: number
+): Promise<StrapiReview[]> {
+  const response = await fetchStrapi<StrapiListResponse<StrapiReview>>(
+    "/api/reviews",
+    {
+      "filters[product][id][$eq]": String(productId),
+      "filters[reviewStatus][$eq]": "approved",
+      "sort": "createdAt:desc",
+      "fields[0]": "customerName",
+      "fields[1]": "rating",
+      "fields[2]": "comment",
+      "fields[3]": "reviewStatus",
+      "fields[4]": "createdAt",
+      "pagination[pageSize]": "100",
+    }
+  );
+  return response.data;
+}
+
+/** Compute average rating + count from a list of approved reviews. */
+export function computeReviewStats(reviews: StrapiReview[]): ReviewStats {
+  if (reviews.length === 0) return { average: 0, count: 0 };
+  const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+  return {
+    average: Math.round((sum / reviews.length) * 10) / 10,
+    count: reviews.length,
+  };
+}
+
+/**
+ * Check whether a customer has already reviewed this product
+ * (regardless of moderation status) — used to block duplicate submissions.
+ */
+export async function hasCustomerReviewed(
+  productId: number,
+  customerEmail: string
+): Promise<boolean> {
+  const response = await fetchStrapi<StrapiListResponse<{ id: number }>>(
+    "/api/reviews",
+    {
+      "filters[product][id][$eq]": String(productId),
+      "filters[customerEmail][$eq]": customerEmail,
+      "fields[0]": "id",
+      "pagination[pageSize]": "1",
+    }
+  );
+  return response.data.length > 0;
+}
+
+/**
+ * Create a new review in Strapi. Always forced to "pending" status here —
+ * the API route calling this never lets the client set status directly.
+ */
+export async function createReview(input: {
+  productId: number;
+  customerEmail: string;
+  customerName: string;
+  rating: number;
+  comment: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`${STRAPI_URL}/api/reviews`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${STRAPI_TOKEN}`,
+    },
+    body: JSON.stringify({
+      data: {
+        product: input.productId,
+        customerEmail: input.customerEmail,
+        customerName: input.customerName,
+        rating: input.rating,
+        comment: input.comment,
+        reviewStatus: "pending",
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.error("Strapi review creation failed:", text);
+    return { success: false, error: "Failed to submit review" };
+  }
+
+  return { success: true };
 }

@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ProductDetailActions from "@/components/ProductDetailActions";
 import FAQAccordion from "@/components/FAQAccordion";
+import ProductReviews from "@/components/ProductReviews";
 import ProductGallery from "@/components/ProductGallery";
 
 type Props = {
@@ -140,6 +141,12 @@ const AlertIcon = (
 const QuestionIcon = (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5C6B2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" />
+  </svg>
+);
+
+const StarIcon = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5C6B2E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2.5l2.9 6.24 6.85.72-5.1 4.66 1.42 6.78L12 17.77l-6.07 3.13 1.42-6.78-5.1-4.66 6.85-.72L12 2.5z" />
   </svg>
 );
 
@@ -583,6 +590,11 @@ export default async function ProductPage({ params }: Props) {
             <FAQAccordion faqs={product.faqs} />
           </Section>
         )}
+
+        {/* ── Reviews ──────────────────────────────────────── */}
+        <Section title="Customer Reviews" icon={StarIcon}>
+          <ProductReviews productId={product.id} />
+        </Section>
 
         {/* ── Trust / Why Choose Us / CTA ───────────────────── */}
         {(product.trustBuildingText || product.whyChooseUs || product.ctaText) && (

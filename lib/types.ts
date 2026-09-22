@@ -160,6 +160,22 @@ export type StrapiProduct = {
   relatedProducts: StrapiProduct[];
 };
 
+// ─── Reviews ───────────────────────────────────────────────
+export type StrapiReview = {
+  id: number;
+  documentId: string;
+  customerName: string;
+  rating: number; // 1-5
+  comment: string;
+  reviewStatus: "pending" | "approved" | "rejected";
+  createdAt: string;
+};
+
+export type ReviewStats = {
+  average: number; // 0-5, rounded to 1 decimal
+  count: number;
+};
+
 // ─── Cart (lightweight subset for cart context) ──────────────
 export type CartProduct = {
   id: number;
