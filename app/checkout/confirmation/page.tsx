@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import PostPurchaseReviewPopup from "@/components/PostPurchaseReviewPopup";
 import type { StrapiOrder } from "@/lib/checkout-types";
 
 function ConfirmationContent() {
@@ -101,8 +102,33 @@ function ConfirmationContent() {
     );
   }
 
+  // Build the list of {productId, productName, imageUrl} for the
+  // post-purchase review popup. `item.product` comes back from Strapi as a
+  // populated relation object ({ id }) here (this route populates it),
+  // even though the shared OrderItemData type says `number` (that's the
+  // shape used when *creating* an order, not when reading one back) — so
+  // we defensively unwrap either shape.
+  const reviewItems = (order.orderItem || [])
+    .map((item) => {
+      const productField = item.product as unknown as number | { id: number } | null;
+      const productId =
+        productField && typeof productField === "object"
+          ? productField.id
+          : productField;
+      return productId
+        ? {
+            productId,
+            productName: item.productName,
+            imageUrl: item.imageUrl,
+          }
+        : null;
+    })
+    .filter((x): x is { productId: number; productName: string; imageUrl: string } => x !== null);
+
   return (
     <div className="max-w-2xl mx-auto">
+      <PostPurchaseReviewPopup orderId={order.orderId} items={reviewItems} />
+
       {/* Success header */}
       <div className="text-center mb-8">
         <div

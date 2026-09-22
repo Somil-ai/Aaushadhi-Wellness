@@ -150,6 +150,11 @@ export function getStrapiImageUrl(
  * Pending/rejected reviews are never returned here — this is the only
  * read path the product page uses, so moderation is enforced by construction
  * rather than relying on a query param a client could tamper with.
+ *
+ * NOTE: the field is named "reviewStatus", not "status" — Strapi v5
+ * reserves "status" internally for its Draft & Publish system, and reusing
+ * that name causes validation/admin-UI bugs even on content-types with
+ * draftAndPublish disabled.
  */
 export async function getProductReviews(
   productId: number
