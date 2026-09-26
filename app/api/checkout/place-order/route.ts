@@ -73,11 +73,64 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ─── Calculate totals server-side (prevent client manipulation) ───
-    const subtotal = items.reduce(
-      (sum: number, item: OrderItemData) => sum + item.price * item.quantity,
-      0
+    // ─── Re-verify prices server-side — never trust item.price from the
+    // client. Without this, anyone could edit the request in devtools and
+    // pay whatever price they want. Fetch the real current price for every
+    // product in the cart directly from Strapi and use that instead.
+    const productIds = [...new Set(items.map((item: OrderItemData) => item.product))];
+    const idsQuery = productIds
+      .map((id, i) => `filters[id][$in][${i}]=${id}`)
+      .join("&");
+
+    const productsRes = await fetch(
+      `${STRAPI_URL}/api/products?${idsQuery}&fields[0]=price&fields[1]=productName&pagination[pageSize]=${productIds.length}`,
+      { headers: { Authorization: `Bearer ${STRAPI_TOKEN}` } }
     );
+
+    if (!productsRes.ok) {
+      console.error("Strapi product price lookup failed:", await productsRes.text().catch(() => ""));
+      return NextResponse.json<PlaceOrderResponse>(
+        { success: false, error: "System is currently in maintenance mode." },
+        { status: 503 }
+      );
+    }
+
+    const productsJson = await productsRes.json();
+    const priceById = new Map<number, { price: number; productName: string }>(
+      productsJson.data.map((p: { id: number; price: number; productName: string }) => [
+        p.id,
+        { price: p.price, productName: p.productName },
+      ])
+    );
+
+    // Any product ID the client sent that doesn't actually exist (deleted,
+    // unpublished, or just made up) fails the whole order rather than
+    // silently dropping/mispricing it.
+    const missingProduct = items.find(
+      (item: OrderItemData) => !priceById.has(item.product)
+    );
+    if (missingProduct) {
+      return NextResponse.json<PlaceOrderResponse>(
+        { success: false, error: "One or more items in your cart are no longer available." },
+        { status: 400 }
+      );
+    }
+
+    const invalidQuantity = items.find(
+      (item: OrderItemData) => !Number.isInteger(item.quantity) || item.quantity < 1
+    );
+    if (invalidQuantity) {
+      return NextResponse.json<PlaceOrderResponse>(
+        { success: false, error: "Invalid item quantity." },
+        { status: 400 }
+      );
+    }
+
+    // ─── Calculate totals server-side, from the verified prices ───
+    const subtotal = items.reduce((sum: number, item: OrderItemData) => {
+      const verified = priceById.get(item.product)!;
+      return sum + verified.price * item.quantity;
+    }, 0);
 
     // ─── Re-validate the coupon from scratch — never trust a client-sent
     // discount amount. If the code has gone invalid between the checkout
@@ -136,14 +189,17 @@ export async function POST(request: NextRequest) {
           pincode: shippingAddress.pincode,
           country: shippingAddress.country || "India",
         },
-        orderItem: items.map((item: OrderItemData) => ({
-          product: item.product, // Strapi relation ID
-          productName: item.productName,
-          slug: item.slug,
-          price: item.price,
-          quantity: item.quantity,
-          imageUrl: item.imageUrl,
-        })),
+        orderItem: items.map((item: OrderItemData) => {
+          const verified = priceById.get(item.product)!;
+          return {
+            product: item.product, // Strapi relation ID
+            productName: verified.productName,
+            slug: item.slug,
+            price: verified.price,
+            quantity: item.quantity,
+            imageUrl: item.imageUrl,
+          };
+        }),
         courierName,
         // Store the selected courier so payment-verify can book the same one
         // later for online orders (COD books it right away, below).
