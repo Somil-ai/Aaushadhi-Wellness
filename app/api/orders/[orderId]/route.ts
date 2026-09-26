@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
@@ -9,6 +10,11 @@ const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
  * Fetches order details from Strapi using the customer-facing orderId.
  * Used by the order confirmation page. Supports page refreshes.
  *
+ * Requires login, and only returns the order if it belongs to the logged-in
+ * customer (matched by email) — orderId alone (AAU-YYMMDD-XXXX, a 4-digit
+ * random suffix) is guessable, so it must never be treated as a secret
+ * capable of authorizing access on its own.
+ *
  * Returns: Order summary, items, address, courier/tracking details, payment status.
  */
 export async function GET(
@@ -16,6 +22,14 @@ export async function GET(
   { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: "Please log in to view this order." },
+        { status: 401 }
+      );
+    }
+
     const { orderId } = await params;
 
     if (!orderId) {
@@ -54,6 +68,16 @@ export async function GET(
     }
 
     const order = strapiData.data[0];
+
+    // Ownership check — return the same "not found" a guessed/unrelated
+    // orderId would get, rather than a distinguishable 403, so this
+    // endpoint can't be used to enumerate which order IDs are real.
+    if (order.customerEmail !== session.email) {
+      return NextResponse.json(
+        { success: false, error: "Order not found" },
+        { status: 404 }
+      );
+    }
 
     // NOTE: Strapi's Order content-type has no top-level customerName /
     // customerPhone / trackingId fields — they live as shippingAddress.name,

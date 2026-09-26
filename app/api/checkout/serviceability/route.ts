@@ -11,7 +11,7 @@ import type { ServiceabilityResponse } from "@/lib/checkout-types";
 /**
  * POST /api/checkout/serviceability
  *
- * 1. Verify Firebase ID token (phone auth).
+ * 1. Verify the logged-in session (email OTP, cookie-based).
  * 2. Check if the pincode is serviceable via iCarry api_check_pincode.
  * 3. Get the cheapest courier rate via iCarry api_get_estimate.
  * 4. Look up city/state from India Post API for address auto-fill.
