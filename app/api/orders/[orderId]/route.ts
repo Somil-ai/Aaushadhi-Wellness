@@ -55,6 +55,13 @@ export async function GET(
 
     const order = strapiData.data[0];
 
+    // NOTE: Strapi's Order content-type has no top-level customerName /
+    // customerPhone / trackingId fields — they live as shippingAddress.name,
+    // shippingAddress.mobile, and trackingAwb respectively. Mapping them
+    // here keeps the API response shape convenient for the frontend
+    // (StrapiOrder in lib/checkout-types.ts) without the frontend needing
+    // to know Strapi's internal component structure. There's no `labelUrl`
+    // field in Strapi at all, so it's always null for now.
     return NextResponse.json({
       success: true,
       data: {
@@ -64,20 +71,22 @@ export async function GET(
         orderStatus: order.orderStatus,
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
-        customerName: order.customerName,
-        customerPhone: order.customerPhone,
+        customerName: order.shippingAddress?.name ?? null,
+        customerPhone: order.shippingAddress?.mobile ?? null,
         customerEmail: order.customerEmail,
         subtotal: order.subtotal,
         shippingCost: order.shippingCost,
+        discountAmount: order.discountAmount ?? 0,
+        couponCode: order.couponCode ?? null,
         totalAmount: order.totalAmount,
         shippingAddress: order.shippingAddress,
         orderItem: order.orderItem,
         courierName: order.courierName,
         courierEstimate: order.courierEstimate,
         icarryShipmentId: order.icarryShipmentId,
-        trackingId: order.trackingId,
+        trackingId: order.trackingAwb ?? null,
         trackingUrl: order.trackingUrl,
-        labelUrl: order.labelUrl,
+        labelUrl: null,
         paymentGatewayOrderId: order.paymentGatewayOrderId,
         paymentGatewayPaymentId: order.paymentGatewayPaymentId,
         notes: order.notes,

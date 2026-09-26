@@ -8,6 +8,7 @@ import StepIndicator from "./StepIndicator";
 import EmailVerification from "../auth/EmailVerification";
 import AddressForm from "./AddressForm";
 import PaymentSelector from "./PaymentSelector";
+import CouponInput from "./CouponInput";
 import OrderSummary from "./OrderSummary";
 import type {
   CheckoutStep,
@@ -69,6 +70,10 @@ export default function CheckoutFlow() {
 
   // Step 3 data
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountAmount: number;
+  } | null>(null);
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState("");
 
@@ -130,6 +135,7 @@ export default function CheckoutFlow() {
           courierId: addressData.deliveryEstimate.courierId,
           shippingCost: addressData.deliveryEstimate.shippingCost,
           courierEstimate: addressData.deliveryEstimate.estimatedDays,
+          couponCode: appliedCoupon?.code,
         }),
       });
 
@@ -265,6 +271,8 @@ export default function CheckoutFlow() {
   }
 
   const shippingCost = addressData?.deliveryEstimate?.shippingCost ?? null;
+  const finalTotal =
+    cartTotal + (shippingCost || 0) - (appliedCoupon?.discountAmount || 0);
 
   return (
     <div className="w-full">
@@ -382,6 +390,14 @@ export default function CheckoutFlow() {
                   onSelect={setPaymentMethod}
                 />
 
+                {/* Coupon code */}
+                <CouponInput
+                  subtotal={cartTotal}
+                  applied={appliedCoupon}
+                  onApply={setAppliedCoupon}
+                  onRemove={() => setAppliedCoupon(null)}
+                />
+
                 {/* Error */}
                 {orderError && (
                   <p className="text-red-500 text-xs text-center">
@@ -429,16 +445,16 @@ export default function CheckoutFlow() {
                       {paymentMethod === "online" ? "Opening Payment..." : "Placing Order..."}
                     </span>
                   ) : paymentMethod === "online" ? (
-                    `Pay ₹${(cartTotal + (shippingCost || 0)).toLocaleString("en-IN")} Online`
+                    `Pay ₹${finalTotal.toLocaleString("en-IN")} Online`
                   ) : (
-                    `Place Order — ₹${(cartTotal + (shippingCost || 0)).toLocaleString("en-IN")}`
+                    `Place Order — ₹${finalTotal.toLocaleString("en-IN")}`
                   )}
                 </button>
 
                 {paymentMethod === "cod" && (
                   <p className="text-text-muted text-[11px] text-center">
                     You will pay ₹
-                    {(cartTotal + (shippingCost || 0)).toLocaleString("en-IN")}{" "}
+                    {finalTotal.toLocaleString("en-IN")}{" "}
                     to the delivery partner when your order arrives.
                   </p>
                 )}
@@ -457,6 +473,8 @@ export default function CheckoutFlow() {
               courierEstimate={
                 addressData?.deliveryEstimate?.estimatedDays
               }
+              discountAmount={appliedCoupon?.discountAmount || 0}
+              couponCode={appliedCoupon?.code}
             />
           </div>
         </div>

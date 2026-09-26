@@ -8,6 +8,8 @@ type Props = {
   subtotal: number;
   shippingCost: number | null;
   courierEstimate?: string;
+  discountAmount?: number;
+  couponCode?: string | null;
 };
 
 export default function OrderSummary({
@@ -15,9 +17,11 @@ export default function OrderSummary({
   subtotal,
   shippingCost,
   courierEstimate,
+  discountAmount = 0,
+  couponCode,
 }: Props) {
   const total =
-    shippingCost !== null ? subtotal + shippingCost : subtotal;
+    (shippingCost !== null ? subtotal + shippingCost : subtotal) - discountAmount;
 
   return (
     <div
@@ -93,6 +97,17 @@ export default function OrderSummary({
             <span className="text-text-muted">Estimated Delivery</span>
             <span className="text-olive font-medium text-[11px]">
               {courierEstimate}
+            </span>
+          </div>
+        )}
+
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-xs">
+            <span className="text-text-muted">
+              Discount {couponCode ? `(${couponCode})` : ""}
+            </span>
+            <span className="text-olive font-medium">
+              −₹{discountAmount.toLocaleString("en-IN")}
             </span>
           </div>
         )}

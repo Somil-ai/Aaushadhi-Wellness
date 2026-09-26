@@ -95,6 +95,7 @@ export type PlaceOrderRequest = {
   shippingCost: number;
   courierEstimate: string;
   notes?: string;
+  couponCode?: string;
 };
 
 export type PlaceOrderResponse = {
@@ -104,6 +105,7 @@ export type PlaceOrderResponse = {
     orderStatus: OrderStatus;
     paymentMethod: PaymentMethod;
     totalAmount: number;
+    discountAmount?: number;
   };
   // Present only when paymentMethod === "online" — needed to open Razorpay Checkout.
   razorpay?: {
@@ -111,6 +113,24 @@ export type PlaceOrderResponse = {
     razorpayOrderId: string;
     amount: number; // paise
     currency: string;
+  };
+  error?: string;
+};
+
+// ─── Coupons ──
+
+export type ApplyCouponRequest = {
+  code: string;
+  subtotal: number;
+};
+
+export type ApplyCouponResponse = {
+  success: boolean;
+  data?: {
+    code: string;
+    discountAmount: number;
+    discountType: "percentage" | "flat";
+    discountValue: number;
   };
   error?: string;
 };
@@ -149,6 +169,8 @@ export type StrapiOrder = {
   customerEmail: string | null;
   subtotal: number;
   shippingCost: number;
+  discountAmount: number;
+  couponCode: string | null;
   totalAmount: number;
   shippingAddress: ShippingAddress;
   orderItem: OrderItemData[];

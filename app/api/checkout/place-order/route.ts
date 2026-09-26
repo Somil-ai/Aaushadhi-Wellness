@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { createRazorpayOrder, getPublicKeyId } from "@/lib/razorpay";
 import { bookAndAttachShipment, updateOrder } from "@/lib/fulfillment";
+import { validateCoupon, incrementCouponUsage } from "@/lib/coupon";
 import type {
   PlaceOrderRequest,
   PlaceOrderResponse,
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       courierId,
       shippingCost,
       notes,
+      couponCode,
     } = orderData;
 
     if (!customerName || !customerPhone || !shippingAddress || !items?.length) {
@@ -76,7 +78,30 @@ export async function POST(request: NextRequest) {
       (sum: number, item: OrderItemData) => sum + item.price * item.quantity,
       0
     );
-    const totalAmount = subtotal + shippingCost;
+
+    // ─── Re-validate the coupon from scratch — never trust a client-sent
+    // discount amount. If the code has gone invalid between the checkout
+    // preview and this request (expired, used up, etc.), the order still
+    // goes through, just without the discount, rather than failing outright.
+    let discountAmount = 0;
+    let appliedCouponCode: string | null = null;
+    let couponDocumentId: string | null = null;
+    let couponUsedCount = 0;
+
+    if (couponCode?.trim()) {
+      const couponResult = await validateCoupon(couponCode, subtotal, session.email);
+      if (couponResult.valid) {
+        discountAmount = couponResult.discountAmount;
+        appliedCouponCode = couponResult.coupon.code;
+        couponDocumentId = couponResult.coupon.documentId;
+        couponUsedCount = couponResult.coupon.usedCount;
+      }
+      // If invalid, silently proceed without a discount — the checkout page
+      // already surfaced the error at the "Apply" step, so by the time
+      // place-order runs the customer has already seen (and accepted) that.
+    }
+
+    const totalAmount = subtotal + shippingCost - discountAmount;
 
     // ─── Generate order ID ───
     const orderId = generateOrderId();
@@ -98,6 +123,8 @@ export async function POST(request: NextRequest) {
         customerEmail: customerEmail || null,
         subtotal,
         shippingCost,
+        discountAmount,
+        couponCode: appliedCouponCode,
         totalAmount,
         shippingAddress: {
           name: customerName,
@@ -148,6 +175,16 @@ export async function POST(request: NextRequest) {
     // PUT/DELETE calls — NOT our custom `orderId` field and not the numeric id.
     const documentId: string = strapiJson.data.documentId;
 
+    // Coupon was applied and the order was created successfully — count it
+    // as used. Best-effort: if this fails, the order still stands; a coupon
+    // usage count being slightly stale is a much smaller problem than
+    // losing an otherwise-valid order over a bookkeeping call.
+    if (couponDocumentId) {
+      incrementCouponUsage(couponDocumentId, couponUsedCount).catch((err) =>
+        console.error("Failed to record coupon usage:", err)
+      );
+    }
+
     // ─── COD: book the shipment right away ───
     if (paymentMethod === "cod") {
       bookAndAttachShipment({
@@ -170,7 +207,13 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json<PlaceOrderResponse>({
         success: true,
-        data: { orderId, orderStatus: "confirmed", paymentMethod: "cod", totalAmount },
+        data: {
+          orderId,
+          orderStatus: "confirmed",
+          paymentMethod: "cod",
+          totalAmount,
+          discountAmount,
+        },
       });
     }
 
@@ -192,6 +235,7 @@ export async function POST(request: NextRequest) {
           orderStatus: "confirmed",
           paymentMethod: "online",
           totalAmount,
+          discountAmount,
         },
         razorpay: {
           keyId: getPublicKeyId(),
