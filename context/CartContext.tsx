@@ -5,6 +5,8 @@ import {
   useContext,
   useState,
   useCallback,
+  useEffect,
+  useRef,
   type ReactNode,
 } from "react";
 import type { CartProduct } from "@/lib/types";
@@ -13,6 +15,8 @@ export type CartItem = {
   product: CartProduct;
   quantity: number; // units of 100g
 };
+
+const STORAGE_KEY = "aaushadhi-cart";
 
 type CartContextType = {
   cartItems: CartItem[];
@@ -29,6 +33,37 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const hydrated = useRef(false);
+
+  // Load the saved cart once on mount (client-only — localStorage doesn't
+  // exist during SSR).
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: hydrating from browser-only localStorage after mount, to avoid an SSR/client markup mismatch (server can't read it).
+        if (Array.isArray(parsed)) setCartItems(parsed);
+      }
+    } catch {
+      // Corrupted or inaccessible storage — just start with an empty cart.
+    } finally {
+      hydrated.current = true;
+    }
+  }, []);
+
+  // Persist on every change, but only after the initial load above has run
+  // — otherwise this would immediately overwrite the saved cart with `[]`
+  // on the very first render.
+  useEffect(() => {
+    if (!hydrated.current) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cartItems));
+    } catch {
+      // Storage full/unavailable — cart still works for this session,
+      // it just won't survive a refresh.
+    }
+  }, [cartItems]);
 
   const addToCart = useCallback((product: CartProduct) => {
     setCartItems((prev) => {

@@ -332,6 +332,7 @@ return (
         width={440}
         height={440}
         priority
+        style={{ width: "auto", height: "auto" }}
         className="drop-shadow-[0_35px_45px_rgba(0,0,0,0.18)]"
       />
     </motion.div>

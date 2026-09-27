@@ -14,9 +14,15 @@ export const authService = {
       body: JSON.stringify({ email }),
     });
 
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || "Failed to send OTP");
+    const contentType = res.headers.get("content-type") || "";
+    const data = contentType.includes("application/json")
+      ? await res.json().catch(() => null)
+      : null;
+    if (!res.ok || !data?.success) {
+      throw new Error(
+        data?.error ||
+          `OTP request failed (${res.status}). Restart the Next.js dev server and retry.`,
+      );
     }
   },
 

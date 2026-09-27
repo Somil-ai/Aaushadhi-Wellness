@@ -291,6 +291,7 @@ export default function Navbar() {
               alt="Aaushadhi"
               width={58}
               height={58}
+              priority
               className="object-contain transition-all duration-500 group-hover:scale-105 group-hover:rotate-2"
             />
 
