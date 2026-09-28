@@ -56,7 +56,6 @@ export async function POST(request: NextRequest) {
     const {
       customerName,
       customerPhone,
-      customerEmail,
       shippingAddress,
       items,
       paymentMethod,
@@ -196,7 +195,9 @@ export async function POST(request: NextRequest) {
         orderStatus,
         paymentMethod,
         paymentStatus,
-        customerEmail: customerEmail || null,
+        // The authenticated email is the order owner; never trust an email
+        // supplied in the checkout request for account ownership/history.
+        customerEmail: session.email,
         subtotal,
         shippingCost,
         discountAmount,
@@ -231,7 +232,7 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const strapiRes = await fetch(`${STRAPI_URL}/api/orders`, {
+    const strapiRes = await fetch(`${STRAPI_URL}/api/orders?status=published`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

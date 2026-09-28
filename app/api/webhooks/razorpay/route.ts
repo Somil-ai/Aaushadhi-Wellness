@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyWebhookSignature } from "@/lib/razorpay";
+import { getPayment, verifyWebhookSignature } from "@/lib/razorpay";
 import {
   bookAndAttachShipment,
   findOrderByOrderId,
@@ -104,11 +104,18 @@ export async function POST(request: NextRequest) {
 
         const order = await findOrderByPaymentId(refund.payment_id);
         if (order && order.paymentStatus !== "refunded") {
+          // A processed refund may be partial. Only move the order into the
+          // fully-refunded/cancelled state once Razorpay confirms the entire
+          // payment amount has been refunded.
+          const payment = await getPayment(refund.payment_id);
+          const fullyRefunded = payment.amount_refunded >= payment.amount;
+
           await updateOrder(order.documentId, {
-            paymentStatus: "refunded",
             refundId: refund.id,
             refundedAt: new Date().toISOString(),
-            orderStatus: "cancelled",
+            ...(fullyRefunded
+              ? { paymentStatus: "refunded", orderStatus: "cancelled" }
+              : {}),
           });
         }
         break;

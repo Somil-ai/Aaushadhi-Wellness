@@ -201,7 +201,7 @@ export async function updateOrder(
   documentId: string,
   data: Record<string, unknown>
 ): Promise<void> {
-  const res = await fetch(`${STRAPI_URL}/api/orders/${documentId}`, {
+  const res = await fetch(`${STRAPI_URL}/api/orders/${documentId}?status=published`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
