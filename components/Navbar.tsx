@@ -392,7 +392,8 @@ export default function Navbar() {
           >
                         {/* Search */}
 
-            <button
+            <Link
+              href="/products"
               aria-label="Search"
               className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:bg-[#556B2F]/10 hover:text-[#556B2F]"
             >
@@ -409,7 +410,7 @@ export default function Navbar() {
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.5-4.5" />
               </svg>
-            </button>
+            </Link>
 
             {/* Cart */}
 
