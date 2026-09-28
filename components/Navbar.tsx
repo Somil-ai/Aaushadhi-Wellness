@@ -212,15 +212,24 @@ export default function Navbar() {
 
               customer ? (
 
-                <button
-                  onClick={() => {
-                    logout();
-                    closeMenu();
-                  }}
-                  className="mt-5 rounded-2xl bg-red-50 px-4 py-4 text-left text-xl font-bold text-red-600 transition hover:bg-red-100"
-                >
-                  Logout
-                </button>
+                <>
+                  <Link
+                    href="/orders"
+                    onClick={closeMenu}
+                    className="mt-5 rounded-2xl bg-[#F3ECD7B9] px-4 py-4 text-left text-xl font-bold text-[#556B2F] transition hover:bg-[#e8dfc2]"
+                  >
+                    My Orders
+                  </Link>
+                  <button
+                    onClick={() => {
+                      logout();
+                      closeMenu();
+                    }}
+                    className="mt-3 rounded-2xl bg-red-50 px-4 py-4 text-left text-xl font-bold text-red-600 transition hover:bg-red-100"
+                  >
+                    Logout
+                  </button>
+                </>
 
               ) : (
 
@@ -291,7 +300,6 @@ export default function Navbar() {
               alt="Aaushadhi"
               width={58}
               height={58}
-              priority
               className="object-contain transition-all duration-500 group-hover:scale-105 group-hover:rotate-2"
             />
 
@@ -439,12 +447,20 @@ export default function Navbar() {
 
             {!isLoading && (
               customer ? (
-                <button
-                  onClick={() => logout()}
-                  className="font-semibold uppercase tracking-[2px] text-[#556B2F] transition hover:text-red-600"
-                >
-                  Logout
-                </button>
+                <>
+                  <Link
+                    href="/orders"
+                    className="font-semibold uppercase tracking-[2px] text-[#556B2F] transition hover:text-[#80964C]"
+                  >
+                    My Orders
+                  </Link>
+                  <button
+                    onClick={() => logout()}
+                    className="font-semibold uppercase tracking-[2px] text-[#556B2F] transition hover:text-red-600"
+                  >
+                    Logout
+                  </button>
+                </>
               ) : (
                 <button
                   onClick={() => login()}
