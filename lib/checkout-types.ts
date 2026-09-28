@@ -102,6 +102,7 @@ export type PlaceOrderRequest = {
 
 export type PlaceOrderResponse = {
   success: boolean;
+  errorCode?: "COUPON_INVALID";
   data?: {
     orderId: string;
     orderStatus: OrderStatus;

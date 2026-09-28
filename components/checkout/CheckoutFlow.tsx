@@ -209,6 +209,9 @@ export default function CheckoutFlow() {
       const data = await res.json();
 
       if (!data.success || !data.data) {
+        if (data.errorCode === "COUPON_INVALID") {
+          setAppliedCoupon(null);
+        }
         setOrderError(data.error || "Failed to place order. Please try again.");
         setPlacing(false);
         return;
@@ -480,7 +483,10 @@ export default function CheckoutFlow() {
                 <CouponInput
                   subtotal={cartTotal}
                   applied={appliedCoupon}
-                  onApply={setAppliedCoupon}
+                  onApply={(coupon) => {
+                    setAppliedCoupon(coupon);
+                    setOrderError("");
+                  }}
                   onRemove={() => setAppliedCoupon(null)}
                 />
 

@@ -131,9 +131,8 @@ export async function POST(request: NextRequest) {
     }, 0);
 
     // ─── Re-validate the coupon from scratch — never trust a client-sent
-    // discount amount. If the code has gone invalid between the checkout
-    // preview and this request (expired, used up, etc.), the order still
-    // goes through, just without the discount, rather than failing outright.
+    // discount amount. If it became invalid after checkout preview, stop
+    // before creating an order so the customer can review the updated total.
     let discountAmount = 0;
     let appliedCouponCode: string | null = null;
     let couponDocumentId: string | null = null;
@@ -146,10 +145,16 @@ export async function POST(request: NextRequest) {
         appliedCouponCode = couponResult.coupon.code;
         couponDocumentId = couponResult.coupon.documentId;
         couponUsedCount = couponResult.coupon.usedCount;
+      } else {
+        return NextResponse.json<PlaceOrderResponse>(
+          {
+            success: false,
+            errorCode: "COUPON_INVALID",
+            error: `${couponResult.error}. The coupon discount has been removed. Review the updated total and place your order again.`,
+          },
+          { status: 409 }
+        );
       }
-      // If invalid, silently proceed without a discount — the checkout page
-      // already surfaced the error at the "Apply" step, so by the time
-      // place-order runs the customer has already seen (and accepted) that.
     }
 
     // ─── Shipping: recomputed server-side. The client-sent shippingCost /
