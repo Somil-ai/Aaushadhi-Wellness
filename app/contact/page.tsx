@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useRef, type FormEvent } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -11,8 +10,8 @@ import Footer from "@/components/Footer";
    we present contact as a journey — an organic,
    botanical layout where each contact channel
    is a "petal" radiating from a central message.
-   The form is presented as writing a personal
-   letter, complete with subtle paper texture.
+   Contact channels are presented as petals around
+   a central message.
    ═══════════════════════════════════════════════ */
 
 /* ── Decorative leaf SVG (reused from brand) ── */
@@ -105,37 +104,6 @@ function ChannelCard({
 /* ── Main Page Component ── */
 export default function ContactPage() {
   const playfair = { fontFamily: "var(--font-playfair)" };
-  const [formState, setFormState] = useState<"idle" | "sending" | "sent">("idle");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const formRef = useRef<HTMLFormElement>(null);
-
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setFormState("sending");
-
-    // Build mailto link with pre-filled fields
-    const subject = encodeURIComponent(`Message from ${name} via Aaushadhi Website`);
-    const body = encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\n\n${message}`
-    );
-    const mailtoUrl = `mailto:aaushadhiwellness@gmail.com?subject=${subject}&body=${body}`;
-
-    // Small delay for the animation, then open mail client
-    setTimeout(() => {
-      window.location.href = mailtoUrl;
-      setFormState("sent");
-      // Reset after showing success
-      setTimeout(() => {
-        setFormState("idle");
-        setName("");
-        setEmail("");
-        setMessage("");
-      }, 3000);
-    }, 600);
-  }
-
   return (
     <>
       <div
