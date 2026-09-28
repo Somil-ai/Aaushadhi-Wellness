@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { DeliveryEstimate, PaymentMethod } from "@/lib/checkout-types";
 
 type Props = {
@@ -35,10 +35,11 @@ export default function AddressForm({ cartItems, onComplete }: Props) {
     useState<DeliveryEstimate | null>(null);
   const [serviceError, setServiceError] = useState("");
   const [formError, setFormError] = useState("");
+  const serviceabilityRequest = useRef(0);
 
   // Check serviceability when pincode is 6 digits
   const checkServiceability = useCallback(
-    async (pin: string) => {
+    async (pin: string, requestId: number) => {
       setChecking(true);
       setServiceError("");
       setDeliveryEstimate(null);
@@ -55,6 +56,7 @@ export default function AddressForm({ cartItems, onComplete }: Props) {
         });
 
         const data = await res.json();
+        if (requestId !== serviceabilityRequest.current) return;
 
         if (data.success && data.data) {
           setDeliveryEstimate(data.data);
@@ -67,24 +69,35 @@ export default function AddressForm({ cartItems, onComplete }: Props) {
           );
         }
       } catch {
-        setServiceError("Failed to check delivery. Please try again.");
+        if (requestId === serviceabilityRequest.current) {
+          setServiceError("Failed to check delivery. Please try again.");
+        }
       } finally {
-        setChecking(false);
+        if (requestId === serviceabilityRequest.current) {
+          setChecking(false);
+        }
       }
     },
     [cartItems]
   );
 
   useEffect(() => {
+    const requestId = ++serviceabilityRequest.current;
+
     if (pincode.length === 6) {
-      checkServiceability(pincode);
+      void checkServiceability(pincode, requestId);
     } else {
+      setChecking(false);
       setDeliveryEstimate(null);
       setServiceError("");
       setCity("");
       setState("");
       setCountry("");
     }
+
+    return () => {
+      serviceabilityRequest.current += 1;
+    };
   }, [pincode, checkServiceability]);
 
   const handleContinue = () => {
