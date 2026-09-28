@@ -463,24 +463,6 @@ style={{
 >
 {/* Decorative Leaves */}
 
-<img
-src="/images/leaf-left.png"
-alt=""
-className="absolute left-0 top-16 hidden w-40 opacity-20 pointer-events-none sm:block"
-/>
-
-<img
-src="/images/leaf-right.png"
-alt=""
-className="absolute right-0 top-8 hidden w-40 opacity-20 pointer-events-none sm:block"
-/>
-
-<img
-src="/images/leaf-center.png"
-alt=""
-className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 opacity-15 pointer-events-none sm:w-36"
-/>
-
 <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6">
 
 {/* Heading */}
@@ -570,24 +552,6 @@ className="h-64 w-full object-cover transition duration-700 hover:scale-105 sm:h
 }}
 >
   {/* Decorative Leaves */}
-
-  <img
-    src="/images/leaf-left.png"
-    alt=""
-    className="absolute left-0 bottom-0 w-40 opacity-20"
-  />
-
-  <img
-    src="/images/leaf-right.png"
-    alt=""
-    className="absolute right-0 top-0 w-40 opacity-20"
-  />
-
-  <img
-    src="/images/leaf-center.png"
-    alt=""
-    className="absolute left-1/2 top-10 -translate-x-1/2 w-28 opacity-15"
-  />
 
   <div className="relative z-10 mx-auto max-w-7xl px-6">
 
@@ -719,8 +683,9 @@ className="h-64 w-full object-cover transition duration-700 hover:scale-105 sm:h
       {/* WhatsApp */}
 
       <a
-        href="https://wa.me/919999999999"
+        href="https://wa.me/918269431640"
         target="_blank"
+        rel="noopener noreferrer"
         className="
           rounded-full
           bg-[#2ECC52]

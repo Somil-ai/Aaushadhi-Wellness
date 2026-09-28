@@ -79,22 +79,6 @@ export default function BlogAndUSP() {
 
 <div className="absolute right-0 bottom-0 h-[380px] w-[380px] rounded-full bg-[#F8E9CF]/50 blur-[120px]" />
 
-        <Image
-          src="/images/leaf-left.png"
-          alt=""
-          width={180}
-          height={400}
-          className="absolute left-0 top-0 opacity-20"
-        />
-
-        <Image
-          src="/images/leaf-right.png"
-          alt=""
-          width={180}
-          height={400}
-          className="absolute right-0 top-0 opacity-20"
-        />
-
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6">
@@ -350,4 +334,3 @@ export default function BlogAndUSP() {
   </section>
 );
 }
-    

@@ -27,7 +27,6 @@ const policies = [
 const enquire = [
   { title: "About Us", href: "/about" },
   { title: "Contact Us", href: "/contact" },
-  { title: "FAQs", href: "/faq" },
 ];
 
 export default function Footer() {

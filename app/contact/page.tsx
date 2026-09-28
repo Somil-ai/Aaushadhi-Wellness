@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, type FormEvent } from "react";
-import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -171,31 +170,9 @@ export default function ContactPage() {
           <main
   className="relative overflow-hidden"
   style={{
-    backgroundImage: "url('/images/paper-bg.jpg')",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundColor: "rgba(243, 228, 200, 0.55)",
   }}
 >
-  {/* Left Leaves */}
-  <img
-    src="/images/leaf-left.png"
-    alt=""
-    className="absolute left-0 top-0 h-full w-36 object-cover opacity-30 pointer-events-none"
-  />
-
-  {/* Right Leaves */}
-  <img
-    src="/images/leaf-right.png"
-    alt=""
-    className="absolute right-0 top-0 h-full w-36 object-cover opacity-30 pointer-events-none"
-  />
-
-  {/* Center Hanging Leaf */}
-  <img
-    src="/images/leaf-center.png"
-    alt=""
-    className="absolute left-1/2 top-0 -translate-x-1/2 w-24 opacity-40 pointer-events-none"
-  />
   {/* ================= PAGE HEADING ================= */}
 <section className="pt-12 md:pt-16 pb-6">
   <div className="max-w-7xl mx-auto px-6 text-center">

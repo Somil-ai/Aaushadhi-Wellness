@@ -13,7 +13,8 @@ type Products = Awaited<ReturnType<typeof getProducts>>;
 
 export default async function Home() {
   const products = await getProducts();
-  const featured = products.slice(0, 6);
+  const featuredProducts = products.filter((product) => product.featured);
+  const featured = (featuredProducts.length > 0 ? featuredProducts : products).slice(0, 6);
 
   return (
     <>
