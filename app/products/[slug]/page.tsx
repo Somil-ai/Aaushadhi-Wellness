@@ -479,7 +479,7 @@ export default async function ProductPage({ params }: Props) {
         {product.whyCustomersLoveIt && (
           <Section title="Why Customers Love It" icon={HeartIcon}>
             <div className="p-6 rounded-2xl bg-gradient-to-br from-olive/5 to-parchment/40 border border-olive/10 relative overflow-hidden">
-              <div className="absolute top-4 left-5 text-olive/15 text-5xl leading-none" style={{ fontFamily: "var(--font-playfair)" }}>"</div>
+              <div className="absolute top-4 left-5 text-olive/15 text-5xl leading-none" style={{ fontFamily: "var(--font-playfair)" }}>&quot;</div>
               <p className="text-text-dark text-[15px] leading-[1.85] relative z-10 pl-6">
                 {product.whyCustomersLoveIt}
               </p>

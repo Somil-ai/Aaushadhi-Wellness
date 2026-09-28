@@ -10,6 +10,19 @@ interface EmailVerificationProps {
   subtitle?: string;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return fallback;
+}
+
 export default function EmailVerification({
   onVerified,
   title = "Verify your email",
@@ -62,8 +75,8 @@ export default function EmailVerification({
       setCooldown(60);
       // Focus first OTP input after short delay to allow DOM to render
       setTimeout(() => inputRefs[0].current?.focus(), 100);
-    } catch (err: any) {
-      setError(err.message || "Failed to send code. Please try again.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Failed to send code. Please try again."));
     } finally {
       setIsLoading(false);
     }
@@ -80,8 +93,8 @@ export default function EmailVerification({
     try {
       const customer = await authService.verifyOtp(email, code, name);
       onVerified(customer);
-    } catch (err: any) {
-      setError(err.message || "Invalid or expired code.");
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, "Invalid or expired code."));
       setIsLoading(false);
     }
   };
@@ -230,7 +243,7 @@ export default function EmailVerification({
           </button>
 
           <div className="text-center text-sm">
-            <span className="text-text-muted">Didn't receive the code? </span>
+            <span className="text-text-muted">Didn&apos;t receive the code? </span>
             <button
               type="button"
               onClick={handleSendOtp}

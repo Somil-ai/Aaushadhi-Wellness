@@ -316,7 +316,7 @@ export default function ContactPage() {
         Whether you have a question about our herbs,
         need guidance choosing the right product,
         or just want to say hello —
-        we're here, rooted and ready.
+        we&apos;re here, rooted and ready.
       </p>
 
     </div>

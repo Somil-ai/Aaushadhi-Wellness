@@ -222,7 +222,7 @@ export default function TermsOfUsePage() {
 
                 If you have any questions regarding these Terms of Use,
                 please contact the Aaushadhi Wellness support team.
-                We're always happy to help.
+                We&apos;re always happy to help.
 
               </p>
 

@@ -72,7 +72,7 @@ export default function ProductCarousel({ products }: Props) {
           </span>
 
           <h2 className="mt-6 text-4xl md:text-5xl lg:text-6xl font-bold text-[#000000] font-playfair">
-            Nature's Finest Collection
+            Nature&apos;s Finest Collection
           </h2>
 
           <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-[#6B665C]">

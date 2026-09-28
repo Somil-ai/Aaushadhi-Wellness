@@ -259,7 +259,7 @@ boxShadow:
 <p className="mt-5 text-[#2E2E2E] text-sm leading-6 sm:mt-8 sm:text-lg sm:leading-9 md:text-xl">
         Everything we make is rooted in nature, grown with care on our own farms,
         and crafted with a deep commitment to purity, transparency and
-        sustainability. From seed to shelf, we ensure nature's goodness reaches
+        sustainability. From seed to shelf, we ensure nature&apos;s goodness reaches
         you in its truest form.
 </p>
 </div>
@@ -444,7 +444,7 @@ style={{
 fontFamily: "var(--font-playfair)",
           }}
 >
-          "From Seed to Shelf, Every Product Carries Nature's Promise."
+          &quot;From Seed to Shelf, Every Product Carries Nature&apos;s Promise.&quot;
 </p>
 </div>
 
