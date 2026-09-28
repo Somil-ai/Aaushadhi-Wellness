@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -15,6 +15,7 @@ import type {
   PaymentMethod,
   DeliveryEstimate,
   OrderItemData,
+  ServiceabilityResponse,
 } from "@/lib/checkout-types";
 
 declare global {
@@ -76,6 +77,72 @@ export default function CheckoutFlow() {
   } | null>(null);
   const [placing, setPlacing] = useState(false);
   const [orderError, setOrderError] = useState("");
+  const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
+  const [shippingQuoteError, setShippingQuoteError] = useState("");
+  const shippingQuoteRequest = useRef(0);
+
+  const handlePaymentMethodChange = useCallback(
+    (method: PaymentMethod) => {
+      const requestId = ++shippingQuoteRequest.current;
+      setPaymentMethod(method);
+      setShippingQuoteError("");
+
+      if (!addressData || addressData.deliveryEstimate.paymentMethod === method) {
+        setShippingQuoteLoading(false);
+        return;
+      }
+
+      setShippingQuoteLoading(true);
+      void (async () => {
+        try {
+          const res = await fetch("/api/checkout/serviceability", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pincode: addressData.pincode,
+              paymentMethod: method,
+              items: cartItems.map((item) => ({
+                product: item.product.id,
+                quantity: item.quantity,
+              })),
+            }),
+          });
+          const result = (await res.json()) as ServiceabilityResponse;
+
+          if (requestId !== shippingQuoteRequest.current) return;
+          if (!res.ok || !result.success || !result.data) {
+            setShippingQuoteError(
+              result.error || "Unable to refresh delivery charges. Please retry."
+            );
+            return;
+          }
+
+          setAddressData((current) =>
+            current
+              ? {
+                  ...current,
+                  city: result.data!.city,
+                  state: result.data!.state,
+                  country: result.data!.country,
+                  deliveryEstimate: result.data!,
+                }
+              : current
+          );
+        } catch {
+          if (requestId === shippingQuoteRequest.current) {
+            setShippingQuoteError(
+              "Unable to refresh delivery charges. Please check your connection and retry."
+            );
+          }
+        } finally {
+          if (requestId === shippingQuoteRequest.current) {
+            setShippingQuoteLoading(false);
+          }
+        }
+      })();
+    },
+    [addressData, cartItems]
+  );
 
   // ─── Step 1: Email verified ───
   const handleEmailVerified = useCallback(
@@ -309,6 +376,7 @@ export default function CheckoutFlow() {
             {step === 2 && (
               <AddressForm
                 cartItems={cartItems.map((item) => ({
+                  product: item.product.id,
                   quantity: item.quantity,
                 }))}
                 onComplete={handleAddressComplete}
@@ -387,8 +455,26 @@ export default function CheckoutFlow() {
                 {/* Payment method selector */}
                 <PaymentSelector
                   selected={paymentMethod}
-                  onSelect={setPaymentMethod}
+                  onSelect={handlePaymentMethodChange}
                 />
+
+                {shippingQuoteLoading && (
+                  <p className="text-text-muted text-xs text-center" role="status">
+                    Updating delivery charges for this payment method…
+                  </p>
+                )}
+                {shippingQuoteError && (
+                  <div className="text-center">
+                    <p className="text-red-500 text-xs">{shippingQuoteError}</p>
+                    <button
+                      type="button"
+                      onClick={() => handlePaymentMethodChange(paymentMethod)}
+                      className="mt-1 text-olive text-xs font-semibold hover:underline"
+                    >
+                      Retry delivery quote
+                    </button>
+                  </div>
+                )}
 
                 {/* Coupon code */}
                 <CouponInput
@@ -409,12 +495,12 @@ export default function CheckoutFlow() {
                 <button
                   type="button"
                   onClick={handlePlaceOrder}
-                  disabled={placing}
+                  disabled={placing || shippingQuoteLoading || !!shippingQuoteError}
                   className={`
                     w-full py-4 rounded-xl text-sm font-bold uppercase tracking-wider
                     transition-all duration-200 cursor-pointer
                     ${
-                      placing
+                      placing || shippingQuoteLoading || !!shippingQuoteError
                         ? "bg-olive/40 text-white/60 cursor-not-allowed"
                         : "bg-olive text-white hover:bg-olive-light active:scale-[0.98] shadow-lg"
                     }
@@ -444,6 +530,8 @@ export default function CheckoutFlow() {
                       </svg>
                       {paymentMethod === "online" ? "Opening Payment..." : "Placing Order..."}
                     </span>
+                  ) : shippingQuoteLoading ? (
+                    "Updating delivery charges..."
                   ) : paymentMethod === "online" ? (
                     `Pay ₹${finalTotal.toLocaleString("en-IN")} Online`
                   ) : (

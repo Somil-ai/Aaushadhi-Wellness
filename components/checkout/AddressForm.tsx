@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { DeliveryEstimate, PaymentMethod } from "@/lib/checkout-types";
 
 type Props = {
-  cartItems: { quantity: number }[];
+  cartItems: { product: number; quantity: number }[];
   onComplete: (data: {
     pincode: string;
     fullName: string;

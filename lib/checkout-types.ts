@@ -23,6 +23,7 @@ export type OrderItemData = {
 // ─── Delivery Estimate (returned by serviceability API) ──
 export type DeliveryEstimate = {
   serviceable: boolean;
+  paymentMethod: PaymentMethod;
   city: string;
   state: string;
   country: string;
@@ -75,6 +76,7 @@ export type CheckoutState = {
 export type ServiceabilityRequest = {
   pincode: string;
   paymentMethod: PaymentMethod;
+  items: { product: number; quantity: number }[];
 };
 
 export type ServiceabilityResponse = {

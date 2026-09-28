@@ -8,6 +8,9 @@ import {
 } from "@/lib/icarry";
 import type { ServiceabilityResponse } from "@/lib/checkout-types";
 
+const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
+
 /**
  * POST /api/checkout/serviceability
  *
@@ -16,7 +19,7 @@ import type { ServiceabilityResponse } from "@/lib/checkout-types";
  * 3. Get the cheapest courier rate via iCarry api_get_estimate.
  * 4. Look up city/state from India Post API for address auto-fill.
  *
- * Body: { pincode, paymentMethod, items: { quantity, price }[], idToken }
+ * Body: { pincode, paymentMethod, items: { product, quantity }[] }
  */
 export async function POST(request: NextRequest) {
   try {
@@ -46,6 +49,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (paymentMethod !== "cod" && paymentMethod !== "online") {
+      return NextResponse.json<ServiceabilityResponse>(
+        { success: false, error: "Please select a valid payment method." },
+        { status: 400 }
+      );
+    }
+
+    const invalidItem = items.find(
+      (item: { product?: unknown; quantity?: unknown }) =>
+        !Number.isInteger(item.product) ||
+        (item.product as number) < 1 ||
+        !Number.isInteger(item.quantity) ||
+        (item.quantity as number) < 1 ||
+        (item.quantity as number) > 20
+    );
+    if (invalidItem) {
+      return NextResponse.json<ServiceabilityResponse>(
+        { success: false, error: "Invalid cart items." },
+        { status: 400 }
+      );
+    }
+
 
     // ─── Step 1: Check serviceability via iCarry ───
     //
@@ -67,6 +92,7 @@ export async function POST(request: NextRequest) {
         success: true,
         data: {
           serviceable: true,
+          paymentMethod,
           city: locationDetails.city,
           state: locationDetails.state,
           country: locationDetails.country,
@@ -96,13 +122,47 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── Step 3: Get cheapest courier from iCarry ───
+    const productIds = [...new Set(items.map((item: { product: number }) => item.product))];
+    const productQuery = new URLSearchParams();
+    productIds.forEach((id, index) => {
+      productQuery.set(`filters[id][$in][${index}]`, String(id));
+    });
+    productQuery.set("fields[0]", "price");
+    productQuery.set("pagination[pageSize]", String(productIds.length));
+    const productsRes = await fetch(`${STRAPI_URL}/api/products?${productQuery}`, {
+      headers: { Authorization: `Bearer ${STRAPI_TOKEN}` },
+      cache: "no-store",
+    });
+
+    if (!productsRes.ok) {
+      console.error("Strapi product price lookup failed:", productsRes.status);
+      return NextResponse.json<ServiceabilityResponse>(
+        { success: false, error: "Unable to calculate delivery charges right now." },
+        { status: 503 }
+      );
+    }
+
+    const productsJson = await productsRes.json();
+    const priceById = new Map<number, number>(
+      (productsJson.data || []).map((product: { id: number; price: number }) => [
+        product.id,
+        product.price,
+      ])
+    );
+    if (productIds.some((id) => !priceById.has(id))) {
+      return NextResponse.json<ServiceabilityResponse>(
+        { success: false, error: "One or more cart items are no longer available." },
+        { status: 400 }
+      );
+    }
+
     const totalWeight = calculateTotalWeight(items);
     const isCod = paymentMethod === "cod";
 
-    // Calculate order value from items
+    // Estimate from Strapi's current prices; never trust browser-supplied prices.
     const orderValue = items.reduce(
-      (sum: number, item: { price?: number; quantity: number }) =>
-        sum + (item.price || 399) * item.quantity,
+      (sum: number, item: { product: number; quantity: number }) =>
+        sum + priceById.get(item.product)! * item.quantity,
       0
     );
 
@@ -119,6 +179,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         serviceable: true,
+        paymentMethod,
         city: locationDetails.city,
         state: locationDetails.state,
         country: locationDetails.country,
