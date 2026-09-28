@@ -2,9 +2,9 @@ import "server-only";
 
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { getSessionSecret } from "./session-secret";
 
-const secretKey = process.env.SESSION_SECRET || "default_super_secret_for_dev_only";
-const encodedKey = new TextEncoder().encode(secretKey);
+const getEncodedKey = () => new TextEncoder().encode(getSessionSecret());
 
 export type SessionPayload = {
   customerId: number;
@@ -16,12 +16,12 @@ export async function encrypt(payload: SessionPayload) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
-    .sign(encodedKey);
+    .sign(getEncodedKey());
 }
 
 export async function decrypt(session: string | undefined = "") {
   try {
-    const { payload } = await jwtVerify(session, encodedKey, {
+    const { payload } = await jwtVerify(session, getEncodedKey(), {
       algorithms: ["HS256"],
     });
     return payload as SessionPayload;

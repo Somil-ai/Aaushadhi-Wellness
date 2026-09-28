@@ -80,7 +80,32 @@ export type StrapiOrderRecord = {
  * on Strapi. Callers should check `icarryShipmentId` is not already set
  * before calling this — it does not itself guard against double-booking.
  */
+// Orders currently being booked by this server process. Payment-verify and
+// the Razorpay webhook often fire within milliseconds of each other for the
+// same order; without this, both can pass the "no shipment yet" check and
+// each book a shipment. (In-process guard — covers a single Node instance.
+// If you ever run multiple instances, move this claim into the database.)
+const inFlightBookings = new Set<string>();
+
 export async function bookAndAttachShipment(
+  order: FulfillmentOrder
+): Promise<{ success: boolean; error?: string }> {
+  if (inFlightBookings.has(order.orderId)) {
+    return { success: true }; // another callback is already booking this order
+  }
+  inFlightBookings.add(order.orderId);
+  try {
+    // Re-read the order fresh: a callback that finished a moment ago may
+    // have already attached a shipment.
+    const fresh = await findOrderByOrderId(order.orderId);
+    if (fresh?.icarryShipmentId) return { success: true };
+    return await performBooking(order);
+  } finally {
+    inFlightBookings.delete(order.orderId);
+  }
+}
+
+async function performBooking(
   order: FulfillmentOrder
 ): Promise<{ success: boolean; error?: string }> {
   // TEMPORARY: see the same flag in the serviceability route. Skips the

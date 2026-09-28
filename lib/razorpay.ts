@@ -132,6 +132,22 @@ export function verifyWebhookSignature(rawBody: string, signature: string): bool
   return timingSafeEqualHex(expected, signature);
 }
 
+// ─── Payment lookup ──────────────────────────────────────────
+
+/** Fetch a payment so refund logic can see how much is still refundable. */
+export async function getPayment(
+  paymentId: string
+): Promise<{ amount: number; amount_refunded: number; status: string }> {
+  const res = await fetch(`${RAZORPAY_BASE_URL}/payments/${paymentId}`, {
+    headers: { Authorization: authHeader() },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Razorpay payment lookup failed: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
 // ─── Refunds ─────────────────────────────────────────────────
 
 /**

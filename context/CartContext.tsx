@@ -17,6 +17,7 @@ export type CartItem = {
 };
 
 const STORAGE_KEY = "aaushadhi-cart";
+export const MAX_ITEM_QUANTITY = 20; // per product; also enforced server-side
 
 type CartContextType = {
   cartItems: CartItem[];
@@ -90,9 +91,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
       return;
     }
+    const safeQty = Math.min(Math.floor(qty), MAX_ITEM_QUANTITY);
     setCartItems((prev) =>
       prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity: qty } : item
+        item.product.id === productId ? { ...item, quantity: safeQty } : item
       )
     );
   }, []);

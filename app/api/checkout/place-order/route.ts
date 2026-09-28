@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { createRazorpayOrder, getPublicKeyId } from "@/lib/razorpay";
 import { bookAndAttachShipment, updateOrder } from "@/lib/fulfillment";
 import { validateCoupon, incrementCouponUsage } from "@/lib/coupon";
+import { getVerifiedShippingQuote } from "@/lib/shipping";
 import type {
   PlaceOrderRequest,
   PlaceOrderResponse,
@@ -59,9 +60,6 @@ export async function POST(request: NextRequest) {
       shippingAddress,
       items,
       paymentMethod,
-      courierName,
-      courierId,
-      shippingCost,
       notes,
       couponCode,
     } = orderData;
@@ -117,7 +115,8 @@ export async function POST(request: NextRequest) {
     }
 
     const invalidQuantity = items.find(
-      (item: OrderItemData) => !Number.isInteger(item.quantity) || item.quantity < 1
+      (item: OrderItemData) =>
+        !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 20
     );
     if (invalidQuantity) {
       return NextResponse.json<PlaceOrderResponse>(
@@ -153,6 +152,30 @@ export async function POST(request: NextRequest) {
       // already surfaced the error at the "Apply" step, so by the time
       // place-order runs the customer has already seen (and accepted) that.
     }
+
+    // ─── Shipping: recomputed server-side. The client-sent shippingCost /
+    // courierId / courierName are ignored entirely so they can't be tampered with.
+    if (paymentMethod !== "cod" && paymentMethod !== "online") {
+      return NextResponse.json<PlaceOrderResponse>(
+        { success: false, error: "Invalid payment method." },
+        { status: 400 }
+      );
+    }
+    const quote = await getVerifiedShippingQuote({
+      pincode: shippingAddress.pincode,
+      paymentMethod,
+      items,
+      orderValue: subtotal,
+    });
+    if (!quote) {
+      return NextResponse.json<PlaceOrderResponse>(
+        { success: false, error: "Delivery is not available to this pincode right now." },
+        { status: 400 }
+      );
+    }
+    const shippingCost = quote.shippingCost;
+    const courierId = quote.courierId;
+    const courierName = quote.courierName;
 
     const totalAmount = subtotal + shippingCost - discountAmount;
 

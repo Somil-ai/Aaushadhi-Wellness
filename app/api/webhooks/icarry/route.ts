@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
       );
     }
     // Still ack — the raw payload is safely logged and can be replayed manually.
-    return NextResponse.json({ success: true });
+    // 500 (not 200) so iCarry retries — the raw payload is already logged.
+    return NextResponse.json({ success: false }, { status: 500 });
   }
 }

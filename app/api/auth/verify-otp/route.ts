@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { getSessionSecret } from "@/lib/session-secret";
 import { createSession } from "@/lib/session";
 import type { AuthResponse, StrapiCustomer } from "@/lib/auth-types";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
-const SESSION_SECRET = process.env.SESSION_SECRET || "default_super_secret_for_dev_only";
 
 const MAX_ATTEMPTS = 5;
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Verify Hash
-    const incomingHash = crypto.createHmac("sha256", SESSION_SECRET).update(otp).digest("hex");
+    const incomingHash = crypto.createHmac("sha256", getSessionSecret()).update(otp).digest("hex");
 
     if (incomingHash !== otpHash) {
       // Increment attempts

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import crypto from "crypto";
+import { getSessionSecret } from "@/lib/session-secret";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 const STRAPI_TOKEN = process.env.STRAPI_API_TOKEN || "";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
-const SESSION_SECRET = process.env.SESSION_SECRET || "default_super_secret_for_dev_only";
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Generate new OTP and Hash
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
-    const otpHash = crypto.createHmac("sha256", SESSION_SECRET).update(otp).digest("hex");
+    const otp = crypto.randomInt(100000, 1000000).toString(); // 6 digits, CSPRNG
+    const otpHash = crypto.createHmac("sha256", getSessionSecret()).update(otp).digest("hex");
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
     // 3. Save new OTP session in Strapi

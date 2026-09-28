@@ -137,17 +137,34 @@ export async function validateCoupon(
   return { valid: true, coupon, discountAmount };
 }
 
+// Serializes increments per coupon inside this process, and re-reads the
+// live count each time, so two orders finishing together can't both write
+// "old count + 1" and lose an increment.
+const couponLocks = new Map<string, Promise<void>>();
+
 /** Increment a coupon's usedCount after a successful order (best-effort). */
 export async function incrementCouponUsage(
   couponDocumentId: string,
-  currentUsedCount: number
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _staleUsedCount?: number // kept for call-site compatibility; the live value is re-read below
 ): Promise<void> {
-  await fetch(`${STRAPI_URL}/api/coupons/${couponDocumentId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${STRAPI_TOKEN}`,
-    },
-    body: JSON.stringify({ data: { usedCount: currentUsedCount + 1 } }),
-  }).catch((err) => console.error("Failed to increment coupon usage:", err));
+  const previous = couponLocks.get(couponDocumentId) ?? Promise.resolve();
+  const next = previous.then(async () => {
+    const headers = { Authorization: `Bearer ${STRAPI_TOKEN}` };
+    const getRes = await fetch(
+      `${STRAPI_URL}/api/coupons/${couponDocumentId}?fields[0]=usedCount`,
+      { headers, cache: "no-store" }
+    );
+    if (!getRes.ok) throw new Error(`coupon read failed: ${getRes.status}`);
+    const live = (await getRes.json()).data?.usedCount ?? 0;
+
+    const putRes = await fetch(`${STRAPI_URL}/api/coupons/${couponDocumentId}`, {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { usedCount: live + 1 } }),
+    });
+    if (!putRes.ok) throw new Error(`coupon update failed: ${putRes.status}`);
+  });
+  couponLocks.set(couponDocumentId, next.catch(() => {}));
+  await next;
 }
